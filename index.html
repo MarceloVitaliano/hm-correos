@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HM Correos Automáticos</title>
+    <style>
+        body {
+            background-color: #111;
+            color: white;
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        select, input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            width: 90%;
+            max-width: 400px;
+        }
+        #log {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #ccc;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>HM Correos Automáticos</h1>
+    <select id="cliente">
+        <option value="">Selecciona tipo de cliente</option>
+        <option value="notaria">Notarías</option>
+        <option value="juridico">Despachos Jurídicos</option>
+        <option value="editoriales">Editoriales</option>
+        <option value="salud">Sector Salud</option>
+        <option value="agencias">Agencias Creativas</option>
+        <option value="construccion">Construcción</option>
+        <option value="dependencias">Dependencias Gubernamentales</option>
+    </select>
+    <input type="file" id="csvFile" accept=".csv" />
+    <button onclick="enviar()">Enviar Correos</button>
+    <div id="log">[LOG] Esperando acción del usuario...</div>
+    <script>
+        function log(mensaje) {
+            const logDiv = document.getElementById('log');
+            logDiv.textContent += "\n" + mensaje;
+        }
+
+        async function enviar() {
+            const cliente = document.getElementById('cliente').value;
+            const archivo = document.getElementById('csvFile').files[0];
+
+            if (!cliente || !archivo) {
+                alert("Selecciona un cliente y un archivo CSV.");
+                return;
+            }
+
+            log("[INFO] Botón clickeado");
+            log("[INFO] Cliente seleccionado: " + cliente);
+            log("[INFO] Archivo CSV detectado: " + archivo.name);
+            log("[INFO] Enviando solicitud al backend...");
+
+            const formData = new FormData();
+            formData.append("cliente", cliente);
+            formData.append("csv", archivo);
+
+            try {
+                const response = await fetch("https://hmcorreos-backend-production.up.railway.app/enviar", {
+                    method: "POST",
+                    body: formData,
+                });
+                const resultado = await response.json();
+                log("[OK] Correos enviados: " + resultado.exitosos);
+                if (resultado.fallidos > 0) log("[ERROR] Fallidos: " + resultado.fallidos);
+            } catch (e) {
+                log("[FATAL] No se pudo conectar al backend: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
