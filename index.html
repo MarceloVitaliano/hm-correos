@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HM Correos Automáticos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #fcd100;
+    }
+    select, input[type="file"], button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #log {
+      background: #1e1e1e;
+      color: #00ff90;
+      padding: 10px;
+      margin-top: 20px;
+      height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      white-space: pre-wrap;
+      border: 1px solid #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>HM Correos Automáticos</h1>
+  <div>
+    <label for="tipoCliente">Selecciona el tipo de cliente:</label>
+    <select id="tipoCliente">
+      <option value="">-- Seleccionar --</option>
+      <option value="notaria">Notarías</option>
+      <option value="juridico">Despachos Jurídicos</option>
+      <option value="salud">Sector Salud</option>
+      <option value="construccion">Construcción</option>
+      <option value="dependencias">Dependencias Gubernamentales</option>
+      <option value="editoriales">Editoriales</option>
+      <option value="agencias">Agencias de Publicidad</option>
+    </select>
+    <br />
+    <input type="file" id="archivoCSV" accept=".csv" />
+    <br />
+    <button onclick="enviarCorreos()">Enviar Correos</button>
+    <div id="log">[LOG] Esperando acción del usuario...</div>
+  </div>
+
+  <script>
+    function log(mensaje, tipo = "log") {
+      const colores = {
+        log: "#00ff90",
+        info: "#00bfff",
+        warn: "#ffff00",
+        fatal: "#ff4444"
+      };
+      const salida = document.getElementById("log");
+      salida.innerHTML += `\n[%s] ${mensaje}`.replace("%s", tipo.toUpperCase());
+      salida.scrollTop = salida.scrollHeight;
+    }
+
+    async function enviarCorreos() {
+      const tipoCliente = document.getElementById("tipoCliente").value;
+      const archivo = document.getElementById("archivoCSV").files[0];
+
+      if (!tipoCliente || !archivo) {
+        log("Selecciona un tipo de cliente y un archivo CSV.", "fatal");
+        return;
+      }
+
+      log("Botón clickeado", "info");
+      log("Cliente seleccionado: " + tipoCliente, "info");
+      log("Archivo CSV detectado: " + archivo.name, "info");
+
+      const formData = new FormData();
+      formData.append("tipoCliente", tipoCliente);
+      formData.append("archivo", archivo);
+
+      try {
+        log("Enviando solicitud al backend...", "info");
+        const respuesta = await fetch("https://hmcorreos-api.up.railway.app/send", {
+          method: "POST",
+          body: formData,
+        });
+
+        const resultado = await respuesta.json();
+        if (respuesta.ok) {
+          log("✅ Correos enviados exitosamente", "info");
+        } else {
+          log("❌ Error en el servidor: " + resultado.mensaje, "fatal");
+        }
+      } catch (error) {
+        log("No se pudo conectar al backend: " + error.message, "fatal");
+      }
+    }
+  </script>
+</body>
+</html>
